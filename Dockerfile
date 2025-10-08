@@ -6,6 +6,5 @@ RUN gradle shadowJar --no-daemon
 FROM eclipse-temurin:21-jdk-jammy
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar /app/NaruAPI.jar
-COPY .env /app/.env
 EXPOSE 8080
 CMD ["java", "-jar", "NaruAPI.jar"]
