@@ -15,23 +15,33 @@ import io.github.cdimascio.dotenv.dotenv
 
 fun Route.botRoutes(jwtSecret: String) {
     val algorithm = Algorithm.HMAC256(jwtSecret)
-    val dotenv = dotenv()
+    val dotenv = try { dotenv() } catch (_: Exception) { null }
+
+    fun getEnv(key: String): String? =
+        System.getenv(key) ?: dotenv?.get(key)
 
     fun getConnection() = DriverManager.getConnection(
-        dotenv["DB_URL"],
-        dotenv["DB_USER"],
-        dotenv["DB_PASS"]
+        getEnv("DB_URL"),
+        getEnv("DB_USER"),
+        getEnv("DB_PASS")
     )
 
     fun updateBotStatus(botName: String, status: String) {
         getConnection().use { conn ->
+            conn.prepareStatement("""
+                CREATE TABLE IF NOT EXISTS bot_status (
+                    bot_name VARCHAR(100) PRIMARY KEY,
+                    status VARCHAR(50),
+                    last_update TIMESTAMP
+                )
+            """).executeUpdate()
             conn.prepareStatement("""
                 INSERT INTO bot_status (bot_name, status, last_update)
                 VALUES (?, ?, ?)
                 ON DUPLICATE KEY UPDATE
                     status = VALUES(status),
                     last_update = VALUES(last_update)
-            """.trimIndent()).use { stmt ->
+            """).use { stmt ->
                 stmt.setString(1, botName)
                 stmt.setString(2, status)
                 stmt.setTimestamp(3, Timestamp.from(Instant.now()))
@@ -70,7 +80,6 @@ fun Route.botRoutes(jwtSecret: String) {
         )
     }
 
-    /** POST: Recebe status do bot e valida JWT **/
     post("/bot/update") {
         val token = call.request.headers["Authorization"]?.removePrefix("Bearer ")?.trim()
         if (token == null) {
@@ -98,7 +107,6 @@ fun Route.botRoutes(jwtSecret: String) {
         }
     }
 
-    /** GET: Consulta status do bot **/
     get("/bot/status") {
         val botName = call.request.queryParameters["bot_name"] ?: "Kotlinaru"
         val status = getBotStatus(botName)
