@@ -12,29 +12,30 @@ import io.ktor.server.response.respondText
 import java.sql.DriverManager
 
 fun main() {
-    val dotenv = dotenv()
-    val jwtSecret = dotenv["JWT_SECRET"] ?: error("JWT_SECRET não definido no .env")
-    val port = dotenv["PORT"]?.toIntOrNull() ?: 8080
+    val dotenv = try { dotenv() } catch (_: Exception) { null }
 
-    createBotStatusTable(dotenv["DB_URL"]!!, dotenv["DB_USER"]!!, dotenv["DB_PASS"]!!)
+    fun getEnv(key: String): String? =
+        System.getenv(key) ?: dotenv?.get(key)
+
+    val jwtSecret = getEnv("JWT_SECRET") ?: error("JWT_SECRET não definido")
+    val port = getEnv("PORT")?.toIntOrNull() ?: 8080
+    val dbUrl = getEnv("DB_URL") ?: error("DB_URL não definido")
+    val dbUser = getEnv("DB_USER") ?: error("DB_USER não definido")
+    val dbPass = getEnv("DB_PASS") ?: error("DB_PASS não definido")
+
+    createBotStatusTable(dbUrl, dbUser, dbPass)
 
     embeddedServer(Netty, port = port) {
-        install(ContentNegotiation) {
-            jackson()
-        }
+        install(ContentNegotiation) { jackson() }
 
         routing {
-            get("/") {
-                call.respondText("🌐 NaruAPI está online")
-            }
-
+            get("/") { call.respondText("🌐 NaruAPI está online") }
             botRoutes(jwtSecret)
         }
 
         println("🚀 NaruAPI rodando na porta $port")
     }.start(wait = true)
 }
-
 
 fun createBotStatusTable(dbUrl: String, dbUser: String, dbPass: String) {
     val sql = """
