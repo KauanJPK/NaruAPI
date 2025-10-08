@@ -1,40 +1,40 @@
 plugins {
     kotlin("jvm") version "2.2.0"
-    id("io.ktor.plugin") version "3.0.1"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.0"
+    application
 }
 
-group = "org.example"
+group = "org.kauanjpk.naruapi"
 version = "1.0-SNAPSHOT"
-
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
+    // Ktor
     implementation("io.ktor:ktor-server-core:3.0.1")
     implementation("io.ktor:ktor-server-netty:3.0.1")
     implementation("io.ktor:ktor-server-content-negotiation:3.0.1")
     implementation("io.ktor:ktor-serialization-jackson:3.0.1")
-    implementation("io.ktor:ktor-server-call-logging:3.0.1")
-    implementation("io.ktor:ktor-server-auth:3.0.1")
-    implementation("io.ktor:ktor-server-cors:3.0.1")
-    implementation("org.jetbrains.exposed:exposed-core:0.56.0")
-    implementation("org.jetbrains.exposed:exposed-dao:0.56.0")
-    implementation("org.jetbrains.exposed:exposed-jdbc:0.56.0")
-    implementation("com.zaxxer:HikariCP:6.0.0")
-    implementation("com.mysql:mysql-connector-j:9.0.0")
-    implementation("ch.qos.logback:logback-classic:1.5.6")
+
+    // MySQL
+    implementation("mysql:mysql-connector-java:8.0.33")
+
+    // Dotenv
     implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
+
+    // Auth0 JWT
+    implementation("com.auth0:java-jwt:4.4.0")
+
+    // Testes
     testImplementation(kotlin("test"))
-    testImplementation("io.ktor:ktor-server-tests:3.0.1")
 }
 
-tasks.test {
-    useJUnitPlatform()
+application {
+    // Ajuste para seu package principal
+    mainClass.set("kauanjpk.api.naruapi.MainKt")
 }
 
 kotlin {
-    jvmToolchain(24)
+    jvmToolchain(17)
 }
